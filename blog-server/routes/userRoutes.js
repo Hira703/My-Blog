@@ -1,6 +1,6 @@
 const express = require("express");
 const verifyToken = require("../middlewares/verifyToken");
-const { saveUser, getUser } = require("../controllers/userController");
+const { saveUser, getUser, updateUser } = require("../controllers/userController");
 
 module.exports = (db) => {
   const router = express.Router();
@@ -11,6 +11,8 @@ module.exports = (db) => {
 
   // GET /api/users?email=<email> or ?uid=<uid> - Get user by email or uid
   router.get("/users", verifyToken, getUser(usersCollection));
+  // Update user profile
+router.put("/users/:id",verifyToken, updateUser(usersCollection));
 
   return router;
 };

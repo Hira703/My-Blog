@@ -18,48 +18,43 @@ const Testimonials = () => {
   }, []);
 
   return (
-    <div className="w-full max-w-6xl mx-auto my-16 px-4">
-      <h2 className="text-3xl font-bold text-center mb-8 text-indigo-600 dark:text-indigo-400">
-        What Our Members Say
-      </h2>
+    <div className="h-56 sm:h-64 xl:h-80 2xl:h-96 w-full max-w-5xl mx-auto my-10 px-4">
       <Swiper
         loop={true}
         autoplay={{
-          delay: 4000,
+          delay: 3000,
           disableOnInteraction: false,
         }}
         navigation={true}
         pagination={{ clickable: true }}
         modules={[Autoplay, Navigation, Pagination]}
-        className="rounded-xl"
+        className="h-full w-full rounded-lg overflow-hidden"
       >
         {reviews.map((review) => (
           <SwiperSlide key={review._id}>
             <div
-              className={`h-full w-full flex flex-col items-center justify-center text-center p-8 md:p-12 shadow-xl transition-all duration-300 rounded-xl ${
+              className={`h-full w-full flex flex-col items-center justify-center text-center p-6 transition-all duration-300 ${
                 theme === "dark"
-                  ? "bg-gradient-to-br from-gray-800 to-gray-900 text-white"
-                  : "bg-gradient-to-br from-white to-gray-100 text-gray-800"
+                  ? "bg-gray-900 text-white"
+                  : "bg-white text-gray-800"
               }`}
             >
               <img
                 src={review.userImage || "/default-user.png"}
                 alt={review.userName}
-                className="w-20 h-20 mb-5 rounded-full object-cover border-4 border-indigo-500 shadow-md"
+                className="w-16 h-16 mb-4 rounded-full object-cover border-2 border-indigo-500"
               />
-              <h4 className="text-xl font-semibold mb-1">{review.userName}</h4>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {review.userEmail}
+              <h4 className="text-lg font-semibold">{review.userName}</h4>
+              <p className="text-sm text-gray-400">{review.userEmail}</p>
+              <p className="italic mt-2 text-sm px-4 max-w-md">
+                "{review.text}"
               </p>
-              <p className="italic mt-4 text-base max-w-2xl leading-relaxed px-4 text-gray-700 dark:text-gray-300">
-                “{review.text}”
-              </p>
-              <div className="flex gap-1 mt-4">
+              <div className="flex gap-1 mt-3">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span
                     key={i}
-                    className={`text-xl ${
-                      i < review.rating ? "text-yellow-400" : "text-gray-300 dark:text-gray-600"
+                    className={`text-lg ${
+                      i < review.rating ? "text-yellow-400" : "text-gray-400"
                     }`}
                   >
                     ★

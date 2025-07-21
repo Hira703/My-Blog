@@ -80,6 +80,7 @@ const Navbar = () => {
           <NavLink to="/featured-blogs" className={({ isActive }) => (isActive ? activeLink : defaultLink)}>
             Featured Blogs
           </NavLink>
+         
 
           {user && (
             <>

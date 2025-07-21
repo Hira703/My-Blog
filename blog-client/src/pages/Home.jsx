@@ -4,6 +4,7 @@ import RecentBlogs from './Home/RecentBlogs';
 import NewsletterSection from './Home/NewsletterSection';
 import TipsAndReadersCorner from './Home/TipsAndReadersCorner';
 import TrendingTopics from './Home/TrendingTopics';
+import Testimonials from './Home/Testimonials';
 
 const Home = () => {
     return (
@@ -13,6 +14,7 @@ const Home = () => {
         
            <TrendingTopics></TrendingTopics>
            <TipsAndReadersCorner></TipsAndReadersCorner>
+           <Testimonials></Testimonials>
            <NewsletterSection></NewsletterSection>
         </div>
     );

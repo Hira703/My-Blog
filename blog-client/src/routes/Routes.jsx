@@ -14,6 +14,7 @@ import UpdateBlog from "../pages/UpdateBlog";
 import MyProfile from "../pages/MyProfile";
 import UpdateProfile from "../pages/UpdateProfile";
 
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
         path: "/all-blogs",
         element: <Allblogs />, // ✅ changed
       },
+     
       {
         path: "/featured-blogs",
         element: <FeaturedBlogs />, // ✅ changed

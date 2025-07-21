@@ -39,7 +39,7 @@ const MyProfile = () => {
           axiosSecure.get(`/api/users?email=${encodeURIComponent(user.email)}`),
         ]);
 
-        setMyBlogs(allRes.data || []);
+        setMyBlogs(allRes.data.blogs || []);
         setLikedBlogs(likedRes.data || []);
         setUserInfo(userRes.data || null);
       } catch (err) {

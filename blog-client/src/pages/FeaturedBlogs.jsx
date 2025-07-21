@@ -29,7 +29,7 @@ const FeaturedBlogs = () => {
     axiosSecure
       .get('/api/blogs')
       .then((res) => {
-        const allBlogs = res.data;
+        const allBlogs = res.data.blogs;
         const featuredBlogs = allBlogs.filter((blog) => blog.isFeatured);
 
         const blogsWithWordCount = featuredBlogs.map((blog) => {

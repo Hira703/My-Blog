@@ -14,12 +14,28 @@ const Allblogs = () => {
   const [searching, setSearching] = useState(false);
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState('');
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [limit] = useState(6);
+  const [totalPages, setTotalPages] = useState(1);
 
+  // Fetch blogs with filters, pagination
   const fetchBlogs = async () => {
     setLoading(true);
     try {
-      const res = await axiosSecure.get('/api/blogs');
-      setBlogs(res.data);
+      // Build query params
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.append('search', searchQuery);
+      if (category) params.append('category', category);
+      params.append('page', page);
+      params.append('limit', limit);
+
+      // Note: backend doesn't do sorting yet, we'll do simple sorting client side
+      const res = await axiosSecure.get(`/api/blogs?${params.toString()}`);
+
+      setBlogs(res.data.blogs);
+      setTotalPages(res.data.pagination.totalPages);
     } catch (error) {
       console.error('Error fetching blogs:', error);
     } finally {
@@ -29,65 +45,29 @@ const Allblogs = () => {
 
   useEffect(() => {
     fetchBlogs();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, category]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) {
-      fetchBlogs();
-      return;
-    }
-
-    setSearching(true);
-    try {
-      const res = await axiosSecure.get(`/api/blogs?search=${encodeURIComponent(searchQuery)}`);
-      setBlogs(res.data);
-    } catch (error) {
-      console.error('Search error:', error);
-    } finally {
-      setSearching(false);
-    }
+    setPage(1); // Reset to first page on new search
+    fetchBlogs();
   };
 
-  const handleToggleLike = async (blogId) => {
-    try {
-      const res = await axiosSecure.post(`/api/blogs/${blogId}/like`);
-      const updatedBlog = res.data.updatedBlog;
+  // Simple sorting client-side, since backend doesn't sort by likes yet
+  const sortedBlogs = [...blogs].sort((a, b) => {
+    if (sort === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
+    if (sort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+    if (sort === 'mostLiked') return (b.likes || 0) - (a.likes || 0);
+    return 0;
+  });
 
-      setBlogs((prevBlogs) =>
-        prevBlogs.map((blog) =>
-          blog._id === blogId ? updatedBlog : blog
-        )
-      );
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    }
+  const handlePrevPage = () => {
+    if (page > 1) setPage(page - 1);
   };
 
-  const filteredBlogs = blogs
-    .filter(blog =>
-      category ? blog.category?.toLowerCase() === category.toLowerCase() : true
-    )
-    .sort((a, b) => {
-      if (sort === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
-      if (sort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
-      if (sort === 'mostLiked') return (b.likes || 0) - (a.likes || 0);
-      return 0;
-    });
-
-  const renderSkeletons = () => {
-    return Array(6).fill(0).map((_, i) => (
-      <div
-        key={i}
-        className={`p-4 rounded shadow-md ${
-          theme === 'light' ? 'bg-white' : 'bg-gray-800'
-        }`}
-      >
-        <Skeleton height={200} className="mb-4" />
-        <Skeleton height={24} width="80%" className="mb-2" />
-        <Skeleton height={20} width="60%" />
-      </div>
-    ));
+  const handleNextPage = () => {
+    if (page < totalPages) setPage(page + 1);
   };
 
   return (
@@ -117,13 +97,17 @@ const Allblogs = () => {
         </button>
       </form>
 
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <select
           className={`select select-bordered w-full sm:w-64 ${
             theme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-700 text-gray-100'
           }`}
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setPage(1); // reset page when category changes
+          }}
         >
           <option value="">All Categories</option>
           <option value="Technology">Technology</option>
@@ -149,21 +133,58 @@ const Allblogs = () => {
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {renderSkeletons()}
-        </div>
-      ) : filteredBlogs.length === 0 ? (
-        <p className="text-center text-lg font-medium">No blogs found.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBlogs.map((blog) => (
-            <BlogCard
-              key={blog._id || blog.slug}
-              blog={blog}
-              onToggleLike={() => handleToggleLike(blog._id)}
-              theme={theme} // optional, remove if BlogCard uses ThemeContext internally
-            />
+          {/* skeleton loaders */}
+          {[...Array(limit)].map((_, i) => (
+            <div
+              key={i}
+              className={`p-4 rounded shadow-md ${
+                theme === 'light' ? 'bg-white' : 'bg-gray-800'
+              }`}
+            >
+              <Skeleton height={200} className="mb-4" />
+              <Skeleton height={24} width="80%" className="mb-2" />
+              <Skeleton height={20} width="60%" />
+            </div>
           ))}
         </div>
+      ) : sortedBlogs.length === 0 ? (
+        <p className="text-center text-lg font-medium">No blogs found.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedBlogs.map((blog) => (
+              <BlogCard
+                key={blog._id || blog.slug}
+                blog={blog}
+                onToggleLike={() => handleToggleLike(blog._id)}
+                theme={theme}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="flex justify-center items-center gap-4 mt-8">
+            <button
+              onClick={handlePrevPage}
+              disabled={page === 1}
+              className={`btn btn-outline ${page === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              Previous
+            </button>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={handleNextPage}
+              disabled={page === totalPages}
+              className={`btn btn-outline ${
+                page === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

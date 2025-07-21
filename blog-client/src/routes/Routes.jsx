@@ -12,6 +12,7 @@ import Wishlist from '../pages/Wishlist';
 import AddBlog from "../pages/AddBlog";
 import UpdateBlog from "../pages/UpdateBlog";
 import MyProfile from "../pages/MyProfile";
+import UpdateProfile from "../pages/UpdateProfile";
 
 const router = createBrowserRouter([
   {
@@ -76,6 +77,10 @@ const router = createBrowserRouter([
           </PrivateRoute>
         ),
       },
+     {
+      path:'/update-profile',
+      element:(<PrivateRoute><UpdateProfile></UpdateProfile></PrivateRoute>)
+     }
     ],
   },
 ]);

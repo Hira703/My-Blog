@@ -140,12 +140,12 @@ const Register = () => {
                   field === 'email' ? 'Email' :
                   field === 'phone' ? 'Phone Number' :
                   field === 'address' ? 'Address' : ''
-                }className={`input input-bordered w-full transition duration-300 ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400'
-                      : 'bg-white text-black border-gray-300 placeholder-gray-500'
-                  }`}
-                  
+                }
+                className={`input input-bordered w-full transition duration-300 ${
+                  theme === 'dark'
+                    ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-300'
+                    : 'bg-white text-black border-gray-300 placeholder-gray-500'
+                }`}
                 required={field !== 'photoURL'}
                 onChange={handleChange}
               />

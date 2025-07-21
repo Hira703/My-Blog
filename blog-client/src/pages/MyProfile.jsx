@@ -11,6 +11,7 @@ import {
   FaPhoneAlt,
   FaMapMarkerAlt,
   FaUserAlt,
+  FaEdit,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Skeleton from "react-loading-skeleton";
@@ -25,7 +26,7 @@ const MyProfile = () => {
   const [likedBlogs, setLikedBlogs] = useState([]);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  // console.log(user);
+
   useEffect(() => {
     if (!user?.email) return;
 
@@ -51,8 +52,6 @@ const MyProfile = () => {
 
     fetchData();
   }, [user]);
-
-  // console.log(userInfo);
 
   const renderSkeletonCard = () => (
     <div
@@ -220,7 +219,7 @@ const MyProfile = () => {
             </p>
           </div>
 
-          {/* Static Tokens and Membership */}
+          {/* Static Tokens and Membership + Update Profile button */}
           <div className="flex flex-col justify-center items-start gap-4">
             <div className="flex items-center gap-2 text-lg font-semibold">
               <svg
@@ -233,7 +232,20 @@ const MyProfile = () => {
               </svg>
               Tokens: <span>1200</span>
             </div>
-            <div className="text-sm text-gray-400">Member since: January 15, 2023</div>
+            <div className="text-sm text-gray-400 mb-4">Member since: January 15, 2023</div>
+
+            {/* Update Profile Button */}
+            <Link
+              to={'/update-profile'}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-md font-semibold transition-colors duration-300 ${
+                theme === "dark"
+                  ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                  : "bg-indigo-500 hover:bg-indigo-600 text-white"
+              }`}
+            >
+              <FaEdit />
+              Update Profile
+            </Link>
           </div>
         </div>
       )}

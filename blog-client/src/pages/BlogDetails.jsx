@@ -18,6 +18,7 @@ import { PhotoProvider, PhotoView } from 'react-photo-view';
 import 'react-photo-view/dist/react-photo-view.css';
 
 import { ThemeContext } from '../context/ThemeProvider';
+import Swal from 'sweetalert2';
 
 const BlogDetails = () => {
   const { id } = useParams();
@@ -28,10 +29,24 @@ const BlogDetails = () => {
   const [blog, setBlog] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+ 
+  const [rating, setRating] = useState(0); // new rating state
+  const [hover, setHover] = useState(0);
   const [isOwner, setIsOwner] = useState(false);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
+  const [hasReviewed, setHasReviewed] = useState(false);
 
+  const Star = ({ filled }) => (
+    <svg
+      className={`w-6 h-6 ${filled ? 'text-yellow-400' : 'text-gray-300'}`}
+      fill="currentColor"
+      viewBox="0 0 20 20"
+    >
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.957a1 1 0 00.95.69h4.164c.969 0 1.371 1.24.588 1.81l-3.37 2.448a1 1 0 00-.364 1.118l1.287 3.956c.3.92-.755 1.688-1.54 1.118l-3.37-2.447a1 1 0 00-1.175 0l-3.37 2.447c-.784.57-1.838-.197-1.54-1.118l1.286-3.956a1 1 0 00-.364-1.118L2.036 9.384c-.783-.57-.38-1.81.588-1.81h4.164a1 1 0 00.95-.69l1.286-3.957z" />
+    </svg>
+  );
+  console.log(user)
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -59,14 +74,17 @@ const BlogDetails = () => {
       const fetchComments = async () => {
         try {
           const { data } = await axiosSecure.get(`/api/comments?blogId=${blog._id}`);
-          setComments(data);
+          setComments(data.comments);
+          setHasReviewed(data.hasReviewed); // <-- track if user already reviewed
         } catch (error) {
           console.error('Error fetching comments:', error);
         }
       };
       fetchComments();
     }
+    
   }, [blog]);
+
 
   const toggleLike = async () => {
     if (!user) {
@@ -86,25 +104,63 @@ const BlogDetails = () => {
     }
   };
 
+  
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!user) return;
-
+  
+    if (rating < 1 || rating > 5) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Invalid Rating',
+        text: 'Please provide a rating between 1 and 5 stars.',
+        confirmButtonColor: '#3085d6',
+      });
+      return;
+    }
+  
     const commentData = {
       blogId: blog._id,
       text: newComment,
-      userName: user.displayName,
-      userImage: user.photoURL,
+      rating,
+      userName: user.displayName||'User',
+      userImage: user.photoURL||'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
     };
-
     try {
       const { data: updatedComments } = await axiosSecure.post('/api/comments', commentData);
       setNewComment('');
+      setRating(0);
       setComments(updatedComments);
+    
+      Swal.fire({
+        icon: 'success',
+        title: 'Comment Added',
+        text: 'Your comment was posted successfully!',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } catch (error) {
       console.error('Error posting comment:', error);
+    
+      if (error.response?.status === 409) {
+        Swal.fire({
+          icon: 'info',
+          title: 'Already Reviewed',
+          text: 'You have already reviewed this blog.',
+          confirmButtonColor: '#3085d6',
+        });
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: 'Something went wrong while posting your comment.',
+          confirmButtonColor: '#d33',
+        });
+      }
     }
+    
   };
+  
 
   if (!blog)
     return <div className="text-center p-10 text-xl font-semibold">Loading...</div>;
@@ -272,107 +328,145 @@ const BlogDetails = () => {
           </div>
 
           {isOwner && (
-            <div className="mt-8">
-              <button
-                onClick={() => navigate(`/update-blog/${blog._id}`)}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${
-                  theme === 'dark'
-                    ? 'btn-outline btn-primary text-yellow-300 border-yellow-300 hover:bg-yellow-400 hover:text-gray-900'
-                    : 'btn-outline btn-primary text-blue-700 border-blue-700 hover:bg-blue-700 hover:text-white'
-                }`}
-              >
-                Edit Blog
-              </button>
-            </div>
-          )}
-        </div>
+  <div className="mt-8">
+    <button
+      onClick={() => navigate(`/update-blog/${blog._id}`)}
+      className={`px-6 py-2 rounded-lg font-semibold transition ${
+        theme === 'dark'
+          ? 'btn-outline btn-primary text-yellow-300 border-yellow-300 hover:bg-yellow-400 hover:text-gray-900'
+          : 'btn-outline btn-primary text-blue-700 border-blue-700 hover:bg-blue-700 hover:text-white'
+      }`}
+    >
+      Edit Blog
+    </button>
+  </div>
+)}
+
+</div>
+</div>
+
+<section>
+  <h2
+    className={`text-3xl font-bold mb-6 ${
+      theme === 'dark' ? 'text-yellow-300' : 'text-blue-800'
+    }`}
+  >
+    Reviews ({comments.length})
+  </h2>
+
+  {/* Conditionally show review form or owner message */}
+  {isOwner ? (
+    <div
+      className={`mb-6 p-6 text-center rounded-lg border shadow-sm font-semibold ${
+        theme === 'dark'
+          ? 'bg-gray-900 border-yellow-400 text-yellow-300'
+          : 'bg-blue-50 border-blue-400 text-blue-700'
+      }`}
+    >
+      🚫 You cannot review your own blog.
+    </div>
+  ) : (
+    <form onSubmit={handleCommentSubmit} className="mb-6">
+      <div className="flex items-center gap-1 mb-2">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            type="button"
+            key={star}
+            onClick={() => setRating(star)}
+            onMouseEnter={() => setHover(star)}
+            onMouseLeave={() => setHover(0)}
+            className="focus:outline-none"
+          >
+            <Star filled={star <= (hover || rating)} />
+          </button>
+        ))}
       </div>
 
-      {/* Comments Section */}
-      <section>
-        <h2
-          className={`text-3xl font-bold mb-6 ${
-            theme === 'dark' ? 'text-yellow-300' : 'text-blue-800'
+      <textarea
+        value={newComment}
+        onChange={(e) => setNewComment(e.target.value)}
+        required
+        placeholder="Write your review here..."
+        rows={4}
+        className={`w-full rounded-md border p-3 resize-none focus:outline-none focus:ring-2 transition ${
+          theme === 'dark'
+            ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-yellow-400'
+            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-600 focus:ring-blue-500'
+        }`}
+      ></textarea>
+
+      <button
+        type="submit"
+        className={`mt-2 px-5 py-2 rounded-md font-semibold transition ${
+          theme === 'dark'
+            ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
+            : 'bg-blue-700 text-white hover:bg-blue-600'
+        }`}
+      >
+        Add Review
+      </button>
+    </form>
+  )}
+
+  {/* Reviews List */}
+  <div className="space-y-4">
+    {comments.length === 0 ? (
+      <p
+        className={`text-center italic ${
+          theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+        }`}
+      >
+        No reviews yet. Be the first to leave one!
+      </p>
+    ) : (
+      comments.map((comment) => (
+        <div
+          key={comment._id}
+          className={`flex gap-4 p-4 rounded-md shadow-md ${
+            theme === 'dark' ? 'bg-gray-800' : 'bg-white'
           }`}
         >
-          Comments ({comments.length})
-        </h2>
-
-        <form onSubmit={handleCommentSubmit} className="mb-6">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            required
-            placeholder="Write your comment here..."
-            rows={4}
-            className={`w-full rounded-md border p-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
-              theme === 'dark'
-                ? 'bg-gray-800 border-gray-600 text-gray-100 placeholder-gray-400 focus:ring-yellow-400'
-                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-600 focus:ring-blue-500'
-            }`}
-          ></textarea>
-          <button
-            type="submit"
-            className={`mt-2 px-5 py-2 rounded-md font-semibold transition ${
-              theme === 'dark'
-                ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-300'
-                : 'bg-blue-700 text-white hover:bg-blue-600'
-            }`}
-          >
-            Add Comment
-          </button>
-        </form>
-
-        <div className="space-y-4">
-          {comments.length === 0 && (
+          <img
+            src={comment.userImage || 'https://i.ibb.co/N3pVtYZ/default-user.png'}
+            alt={comment.userName}
+            className="w-12 h-12 rounded-full object-cover"
+            loading="lazy"
+          />
+          <div>
             <p
-              className={`text-center italic ${
-                theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+              className={`font-semibold ${
+                theme === 'dark' ? 'text-yellow-300' : 'text-blue-800'
               }`}
             >
-              No comments yet. Be the first to comment!
+              {comment.userName}
             </p>
-          )}
-          {comments.map((comment) => (
-            <div
-              key={comment._id}
-              className={`flex gap-4 p-4 rounded-md ${
-                theme === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } shadow-md`}
-            >
-              <img
-                src={comment.userImage || 'https://i.ibb.co/N3pVtYZ/default-user.png'}
-                alt={comment.userName}
-                className="w-12 h-12 rounded-full object-cover"
-                loading="lazy"
-              />
-              <div>
-                <p
-                  className={`font-semibold ${
-                    theme === 'dark' ? 'text-yellow-300' : 'text-blue-800'
-                  }`}
-                >
-                  {comment.userName}
-                </p>
-                <p
-                  className={`text-sm ${
-                    theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                  }`}
-                >
-                  {comment.text}
-                </p>
-                <small
-                  className={`text-xs ${
-                    theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
-                  }`}
-                >
-                  {new Date(comment.createdAt).toLocaleString()}
-                </small>
-              </div>
+            {/* Display Star Rating */}
+            <div className="flex items-center gap-1 mb-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} filled={star <= comment.rating} />
+              ))}
             </div>
-          ))}
+            <p
+              className={`text-sm ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+              }`}
+            >
+              {comment.text}
+            </p>
+            <small
+              className={`text-xs ${
+                theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+              }`}
+            >
+              {new Date(comment.createdAt).toLocaleString()}
+            </small>
+          </div>
         </div>
-      </section>
+      ))
+    )}
+  </div>
+</section>
+
     </div>
   );
 };

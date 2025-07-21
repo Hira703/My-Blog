@@ -112,7 +112,29 @@ async function addComment(req, res) {
   }
 }
 
+
+// GET /api/comments/top-rated
+async function getTopRatedComments(req, res) {
+  try {
+    const db = getDB();
+
+    // Find top 3 comments across all blogs
+    const topComments = await db
+      .collection('comments')
+      .find()
+      .sort({ rating: -1, createdAt: -1 }) 
+      .limit(3)
+      .toArray();
+
+    res.json(topComments);
+  } catch (err) {
+    console.error('Error fetching top rated comments:', err);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+}
+
 module.exports = {
   getComments,
   addComment,
+  getTopRatedComments
 };

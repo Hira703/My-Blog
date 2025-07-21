@@ -13,4 +13,3 @@ router.put('/:id', verifyToken, blogController.updateBlog);
 router.post('/:id/like', verifyToken, blogController.toggleLikeBlog);
 
 module.exports = router;
-

@@ -33,7 +33,7 @@ exports.createBlog = async (req, res) => {
 exports.getAllBlogs = async (req, res) => {
   try {
     const db = getDB();
-    const { search, category, author } = req.query;
+    const { search, category, author, page = 1, limit = 10 } = req.query;
 
     const query = {};
 
@@ -49,13 +49,30 @@ exports.getAllBlogs = async (req, res) => {
       query['author.email'] = author;
     }
 
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+
+    // Get total count for pagination
+    const totalBlogs = await db.collection('blogs').countDocuments(query);
+
+    // Fetch paginated blogs
     const blogs = await db
       .collection('blogs')
       .find(query)
       .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * limitNumber)
+      .limit(limitNumber)
       .toArray();
 
-    res.status(200).json(blogs);
+    res.status(200).json({
+      blogs,
+      pagination: {
+        total: totalBlogs,
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(totalBlogs / limitNumber),
+      },
+    });
   } catch (error) {
     console.error('Blog GET error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -258,5 +275,4 @@ exports.isBlogLikedByUser = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 
